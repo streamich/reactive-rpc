@@ -1,6 +1,7 @@
 # Reactive-RPC
 
-Reactive RPC over WebSocket and HTTP.
+Reactive RPC over WebSocket and HTTP. Both, request and response can be an
+observable (a stream of data).
 
 ```ts
 type RpcCall = (method: string, payload: Observable<unknown>) => Observable<unknown>;
