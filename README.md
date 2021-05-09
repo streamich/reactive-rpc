@@ -13,7 +13,7 @@ type RpcCall = (method: string, payload: Observable<unknown>) => Observable<unkn
 
 ## RPC method types
 
-Similar to gRPC, Reactive-RPC lets you define four kinds of RPC methods:
+Similar to gRPC, [Reactive-RPC](https://onp4.com/@vadim/p/qgzwgi42cz) lets you define four kinds of RPC methods:
 
 1. Unary RPCs where the client sends a single request to the server and gets a
    single response back, just like a normal RPC call.
