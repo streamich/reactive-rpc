@@ -1,3 +1,4 @@
+import type {CompactMessage} from "../../codec/compact/types";
 import type {NotificationMessage} from "./NotificationMessage";
 import type {RequestCompleteMessage} from "./RequestCompleteMessage";
 import type {RequestDataMessage} from "./RequestDataMessage";
@@ -18,3 +19,7 @@ export type ReactiveRpcMessage =
   | ResponseCompleteMessage
   | ResponseErrorMessage
   | ResponseUnsubscribeMessage;
+
+export interface Message {
+  toCompact(): CompactMessage;
+}

@@ -1,9 +1,10 @@
 import type {CompactRequestDataMessage} from "../../codec/compact/types";
+import type {Message} from "./types";
 
 /**
  * @category Message
  */
-export class RequestDataMessage<D = unknown> {
+export class RequestDataMessage<D = unknown> implements Message {
   constructor(
     public readonly id: number,
     public readonly method: string,
