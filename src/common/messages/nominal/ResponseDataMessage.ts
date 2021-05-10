@@ -1,5 +1,5 @@
-import type {CompactResponseDataMessage} from "../../codec/compact/types";
-import type {Message} from "./types";
+import type {CompactResponseDataMessage} from '../../codec/compact/types';
+import type {Message} from './types';
 
 /**
  * @category Message

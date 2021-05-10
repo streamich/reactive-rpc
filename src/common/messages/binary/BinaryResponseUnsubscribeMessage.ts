@@ -1,5 +1,5 @@
-import type {BinaryMessage} from "./types";
-import {ResponseUnsubscribeMessage} from "../nominal";
+import type {BinaryMessage} from './types';
+import {ResponseUnsubscribeMessage} from '../nominal';
 
 /**
  * @category Message

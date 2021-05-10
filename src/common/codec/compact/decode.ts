@@ -1,6 +1,27 @@
-import {NotificationMessage, RequestCompleteMessage, RequestDataMessage, RequestErrorMessage, RequestUnsubscribeMessage, ResponseCompleteMessage, ResponseDataMessage, ResponseErrorMessage, ResponseUnsubscribeMessage} from '../../messages/nominal';
+import {
+  NotificationMessage,
+  RequestCompleteMessage,
+  RequestDataMessage,
+  RequestErrorMessage,
+  RequestUnsubscribeMessage,
+  ResponseCompleteMessage,
+  ResponseDataMessage,
+  ResponseErrorMessage,
+  ResponseUnsubscribeMessage,
+} from '../../messages/nominal';
 import type {Message} from '../../messages/nominal/types';
-import type {CompactMessage, CompactNotificationMessage, CompactRequestCompleteMessage, CompactRequestDataMessage, CompactRequestErrorMessage, CompactRequestUnsubscribeMessage, CompactResponseCompleteMessage, CompactResponseDataMessage, CompactResponseErrorMessage, CompactResponseUnsubscribeMessage} from './types';
+import type {
+  CompactMessage,
+  CompactNotificationMessage,
+  CompactRequestCompleteMessage,
+  CompactRequestDataMessage,
+  CompactRequestErrorMessage,
+  CompactRequestUnsubscribeMessage,
+  CompactResponseCompleteMessage,
+  CompactResponseDataMessage,
+  CompactResponseErrorMessage,
+  CompactResponseUnsubscribeMessage,
+} from './types';
 
 export function decodeMsg(message: CompactMessage): Message {
   const first = message[0];
@@ -23,18 +44,22 @@ export function decodeMsg(message: CompactMessage): Message {
         return new ResponseUnsubscribeMessage(id);
       }
       default: {
-        const [, second] = message as CompactRequestDataMessage | CompactRequestCompleteMessage | CompactRequestErrorMessage | CompactRequestUnsubscribeMessage;
+        const [, second] = message as
+          | CompactRequestDataMessage
+          | CompactRequestCompleteMessage
+          | CompactRequestErrorMessage
+          | CompactRequestUnsubscribeMessage;
         switch (second) {
           case 0: {
-            const [,, name, data] = message as CompactRequestDataMessage;
+            const [, , name, data] = message as CompactRequestDataMessage;
             return new RequestDataMessage(first, name, data);
           }
           case 1: {
-            const [,, name, data] = message as CompactRequestCompleteMessage;
+            const [, , name, data] = message as CompactRequestCompleteMessage;
             return new RequestCompleteMessage(first, name, data);
           }
           case 2: {
-            const [,, data] = message as CompactRequestErrorMessage;
+            const [, , data] = message as CompactRequestErrorMessage;
             return new RequestErrorMessage(first, data);
           }
           case 3: {

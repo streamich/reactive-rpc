@@ -14,7 +14,7 @@ export type CompactRequestUnsubscribeMessage = [Id, 3];
 export type CompactResponseDataMessage<Data = unknown> = [0, Id, Data];
 export type CompactResponseCompleteMessage<Data = unknown> = [-1, Id] | [-1, Id, Data];
 export type CompactResponseErrorMessage<Data = unknown> = [-2, Id, Data];
-export type CompactResponseUnsubscribeMessage = [-3, Id]
+export type CompactResponseUnsubscribeMessage = [-3, Id];
 
 export type CompactMessage =
   | CompactNotificationMessage

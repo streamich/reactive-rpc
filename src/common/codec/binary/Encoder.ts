@@ -29,9 +29,12 @@ export class Encoder {
     for (let i = 0; i < length; i++) {
       const message = messages[i];
       if (message instanceof BinaryNotificationMessage) this.notif(message);
-      else if (message instanceof BinaryRequestDataMessage) this.msgWithIdAndMethod(MessageCode.RequestData, message.id, message.method, message.data);
-      else if (message instanceof BinaryRequestCompleteMessage) this.msgWithIdAndMethod(MessageCode.RequestComplete, message.id, message.method, message.data);
-      else if (message instanceof BinaryRequestErrorMessage) this.msgWithId(MessageCode.RequestError, message.id, message.data);
+      else if (message instanceof BinaryRequestDataMessage)
+        this.msgWithIdAndMethod(MessageCode.RequestData, message.id, message.method, message.data);
+      else if (message instanceof BinaryRequestCompleteMessage)
+        this.msgWithIdAndMethod(MessageCode.RequestComplete, message.id, message.method, message.data);
+      else if (message instanceof BinaryRequestErrorMessage)
+        this.msgWithId(MessageCode.RequestError, message.id, message.data);
       else if (message instanceof BinaryRequestUnsubscribeMessage) this.reqUnsub(message);
       else if (message instanceof BinaryResponseDataMessage) this.resData(message);
       else if (message instanceof BinaryResponseCompleteMessage) this.resComp(message);

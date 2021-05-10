@@ -1,6 +1,6 @@
-import type {BinaryMessage} from "./types";
-import {getHeaderSize} from "../../codec/binary/header";
-import {RequestCompleteMessage} from "../nominal";
+import type {BinaryMessage} from './types';
+import {getHeaderSize} from '../../codec/binary/header';
+import {RequestCompleteMessage} from '../nominal';
 
 /**
  * @category Message

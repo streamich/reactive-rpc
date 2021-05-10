@@ -1,4 +1,14 @@
-import {BinaryNotificationMessage, BinaryRequestCompleteMessage, BinaryRequestDataMessage, BinaryRequestErrorMessage, BinaryRequestUnsubscribeMessage, BinaryResponseCompleteMessage, BinaryResponseDataMessage, BinaryResponseErrorMessage, BinaryResponseUnsubscribeMessage} from '../../../messages/binary';
+import {
+  BinaryNotificationMessage,
+  BinaryRequestCompleteMessage,
+  BinaryRequestDataMessage,
+  BinaryRequestErrorMessage,
+  BinaryRequestUnsubscribeMessage,
+  BinaryResponseCompleteMessage,
+  BinaryResponseDataMessage,
+  BinaryResponseErrorMessage,
+  BinaryResponseUnsubscribeMessage,
+} from '../../../messages/binary';
 import {MessageCode} from '../constants';
 import {Encoder} from '../Encoder';
 
@@ -114,7 +124,7 @@ describe('request', () => {
       expect(buf[10]).toBe(0x7f);
     });
   });
-  
+
   describe('error message', () => {
     test('encodes an error message', () => {
       const buf = encoder.encode([new BinaryRequestErrorMessage(0xcccc, new Uint8Array([55]))]);
@@ -185,7 +195,7 @@ describe('response', () => {
       expect(buf[2]).toBe(0xdd);
     });
   });
-  
+
   describe('error message', () => {
     test('encodes a error message', () => {
       const buf = encoder.encode([new BinaryResponseErrorMessage(0xcccc, new Uint8Array([55]))]);

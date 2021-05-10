@@ -1,4 +1,15 @@
-import {ReactiveRpcBinaryMessage, BinaryNotificationMessage, BinaryResponseDataMessage, BinaryResponseCompleteMessage, BinaryResponseErrorMessage, BinaryResponseUnsubscribeMessage, BinaryRequestUnsubscribeMessage, BinaryRequestDataMessage, BinaryRequestCompleteMessage, BinaryRequestErrorMessage} from '../../messages/binary';
+import {
+  ReactiveRpcBinaryMessage,
+  BinaryNotificationMessage,
+  BinaryResponseDataMessage,
+  BinaryResponseCompleteMessage,
+  BinaryResponseErrorMessage,
+  BinaryResponseUnsubscribeMessage,
+  BinaryRequestUnsubscribeMessage,
+  BinaryRequestDataMessage,
+  BinaryRequestCompleteMessage,
+  BinaryRequestErrorMessage,
+} from '../../messages/binary';
 import {MessageCode} from './constants';
 import {readHeader} from './header';
 
@@ -21,7 +32,10 @@ const readMethod = (arr: Uint8Array, offset: number): [method: string, offset: n
  *
  * @category Codec
  */
-export const decodeFullMessage = (arr: Uint8Array, offset: number): [message: ReactiveRpcBinaryMessage, offset: number] => {
+export const decodeFullMessage = (
+  arr: Uint8Array,
+  offset: number,
+): [message: ReactiveRpcBinaryMessage, offset: number] => {
   const byte1 = arr[offset++];
   const code = byte1 >>> 5;
   switch (code) {
@@ -47,8 +61,8 @@ export const decodeFullMessage = (arr: Uint8Array, offset: number): [message: Re
           : code === MessageCode.ResponseComplete
           ? new BinaryResponseCompleteMessage(id, data)
           : code === MessageCode.ResponseError
-            ? new BinaryResponseErrorMessage(id, data)
-            : new BinaryRequestErrorMessage(id, data);
+          ? new BinaryResponseErrorMessage(id, data)
+          : new BinaryRequestErrorMessage(id, data);
       return [message, offset + length];
     }
     case MessageCode.RequestData:

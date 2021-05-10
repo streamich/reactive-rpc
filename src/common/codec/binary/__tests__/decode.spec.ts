@@ -1,6 +1,16 @@
 import {Encoder} from '../Encoder';
 import {decodeFullMessages} from '../decode';
-import {BinaryNotificationMessage, BinaryRequestCompleteMessage, BinaryRequestDataMessage, BinaryRequestErrorMessage, BinaryRequestUnsubscribeMessage, BinaryResponseCompleteMessage, BinaryResponseDataMessage, BinaryResponseErrorMessage, BinaryResponseUnsubscribeMessage} from '../../../messages/binary';
+import {
+  BinaryNotificationMessage,
+  BinaryRequestCompleteMessage,
+  BinaryRequestDataMessage,
+  BinaryRequestErrorMessage,
+  BinaryRequestUnsubscribeMessage,
+  BinaryResponseCompleteMessage,
+  BinaryResponseDataMessage,
+  BinaryResponseErrorMessage,
+  BinaryResponseUnsubscribeMessage,
+} from '../../../messages/binary';
 
 const encoder = new Encoder();
 
