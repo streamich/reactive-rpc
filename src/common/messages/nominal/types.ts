@@ -9,16 +9,31 @@ import type {ResponseDataMessage} from './ResponseDataMessage';
 import type {ResponseErrorMessage} from './ResponseErrorMessage';
 import type {ResponseUnsubscribeMessage} from './ResponseUnsubscribeMessage';
 
-export type ReactiveRpcMessage =
-  | NotificationMessage
-  | RequestDataMessage
-  | RequestCompleteMessage
-  | RequestErrorMessage
-  | RequestUnsubscribeMessage
-  | ResponseDataMessage
-  | ResponseCompleteMessage
-  | ResponseErrorMessage
+/**
+ * Messages that client can send.
+ */
+export type ReactiveRpcRequestMessage<D = unknown> =
+  | NotificationMessage<D>
+  | RequestDataMessage<D>
+  | RequestCompleteMessage<D>
+  | RequestErrorMessage<D>
   | ResponseUnsubscribeMessage;
+
+/**
+ * Messages with which server can respond.
+ */
+export type ReactiveRpcResponseMessage<D = unknown> =
+  | ResponseDataMessage<D>
+  | ResponseCompleteMessage<D>
+  | ResponseErrorMessage<D>
+  | RequestUnsubscribeMessage;
+
+/**
+ * All Reactive RPC messages.
+ */
+export type ReactiveRpcMessage<D = unknown> =
+  | ReactiveRpcRequestMessage<D>
+  | ReactiveRpcResponseMessage<D>;
 
 export interface Message {
   toCompact(): CompactMessage;

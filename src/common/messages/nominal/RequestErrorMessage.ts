@@ -5,9 +5,9 @@ import type {Message} from './types';
  * @category Message
  */
 export class RequestErrorMessage<D = unknown> implements Message {
-  constructor(public readonly id: number, public readonly data: D) {}
+  constructor(public readonly id: number, public method: string, public readonly data: D) {}
 
   public toCompact(): CompactRequestErrorMessage {
-    return [this.id, 2, this.data];
+    return [this.id, 2, this.method, this.data];
   }
 }
