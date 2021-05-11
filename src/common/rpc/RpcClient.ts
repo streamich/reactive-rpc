@@ -4,6 +4,9 @@ import {ReactiveRpcRequestMessage, ReactiveRpcResponseMessage, NotificationMessa
 import {subscribeCompleteObserver} from '../util/subscribeCompleteObserver';
 import {TimedQueue} from '../util/TimedQueue';
 
+/**
+ * Configuration parameters for {@link RpcClient}.
+ */
 export interface RpcClientParams<T = unknown> {
   /**
    * Method to be called by client when it wants to send messages to the server.
@@ -31,8 +34,40 @@ interface ObserverEntry<T = unknown> {
   req$: Subject<T>;
   /* In-between observable for response stream. */
   res$: Subject<T>;
+  /** Whether response stream was finalized by server. */
+  resFinalized?: boolean;
 }
 
+/**
+ * Implements client-side part of Reactive-RPC protocol.
+ * 
+ * ## Usage
+ * 
+ * Connect RPC client to WebSocket:
+ * 
+ * ```ts
+ * const client = new RpcClient({
+ *   send: (messages) => ws.send(serialize(messages)),
+ * });
+ * ws.on('message', (event) => {
+ *   client.onMessages(deserialize(event.data));
+ * });
+ * ```
+ * 
+ * Send notifications to the server:
+ * 
+ * ```ts
+ * client.notify(method, payload);
+ * ```
+ * 
+ * Execute RPC methods with streaming support:
+ * 
+ * ```ts
+ * client.call(method, data$).subscribe((value) => {
+ *   // ...
+ * });
+ * ```
+ */
 export class RpcClient<T = unknown> {
   private id: number = 1;
   private readonly buffer: TimedQueue<ReactiveRpcRequestMessage<T>>;
@@ -72,6 +107,7 @@ export class RpcClient<T = unknown> {
         const {id, data} = message;
         const call = this.calls.get(id);
         if (!call) return;
+        call.resFinalized = true;
         if (data !== undefined) call.res$.next(data);
         call.res$.complete();
       } else if (message instanceof ResponseDataMessage) {
@@ -83,6 +119,7 @@ export class RpcClient<T = unknown> {
         const {id, data} = message;
         const call = this.calls.get(id);
         if (!call) return;
+        call.resFinalized = true;
         call.res$.error(data);
       } else if (message instanceof RequestUnsubscribeMessage) {
         const {id} = message;
@@ -158,7 +195,8 @@ export class RpcClient<T = unknown> {
     return new Observable<T>((observer: Observer<T>) => {
       res$.subscribe(observer);
       return () => {
-        this.buffer.push(new ResponseUnsubscribeMessage(id));
+        if (!entry.resFinalized)
+          this.buffer.push(new ResponseUnsubscribeMessage(id));
         res$.complete();
       };
     });
@@ -172,5 +210,18 @@ export class RpcClient<T = unknown> {
    */
   public notify(method: string, data: undefined | T): void {
     this.buffer.push(new NotificationMessage<T>(method, data));
+  }
+
+  /**
+   * Stop all in-flight RPC callas and disable buffer. This operation is not
+   * reversible, you cannot use the RPC client after this call.
+   */
+  public stop(): void {
+    this.buffer.onFlush = (message) => {};
+    for (const call of this.calls.values()) {
+      call.req$.complete();
+      call.req$.complete();
+    }
+    this.calls.clear();
   }
 }
