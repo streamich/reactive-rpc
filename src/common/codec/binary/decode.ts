@@ -47,8 +47,7 @@ export const decodeFullMessage = (
     }
     case MessageCode.ResponseData:
     case MessageCode.ResponseComplete:
-    case MessageCode.ResponseError:
-    case MessageCode.RequestError: {
+    case MessageCode.ResponseError: {
       const [length, off1] = readHeader(byte1, arr, offset);
       const o1 = arr[off1];
       const o2 = arr[off1 + 1];
@@ -60,22 +59,25 @@ export const decodeFullMessage = (
           ? new BinaryResponseDataMessage(id, data)
           : code === MessageCode.ResponseComplete
           ? new BinaryResponseCompleteMessage(id, data)
-          : code === MessageCode.ResponseError
-          ? new BinaryResponseErrorMessage(id, data)
-          : new BinaryRequestErrorMessage(id, data);
+          : new BinaryResponseErrorMessage(id, data);
       return [message, offset + length];
     }
     case MessageCode.RequestData:
-    case MessageCode.RequestComplete: {
+    case MessageCode.RequestComplete:
+    case MessageCode.RequestError: {
       const [length, off1] = readHeader(byte1, arr, offset);
       const o1 = arr[off1];
       const o2 = arr[off1 + 1];
       const id = (o1 << 8) | o2;
       const [method, off2] = readMethod(arr, off1 + 2);
       const data: Uint8Array | undefined = arr.subarray(off2, off2 + length);
-      return code === MessageCode.RequestData
-        ? [new BinaryRequestDataMessage(id, method, data), off2 + length]
-        : [new BinaryRequestCompleteMessage(id, method, data), off2 + length];
+      const message =
+        code === MessageCode.RequestData
+          ? new BinaryRequestDataMessage(id, method, data)
+          : code === MessageCode.RequestComplete
+          ? new BinaryRequestCompleteMessage(id, method, data)
+          : new BinaryRequestErrorMessage(id, method, data);
+      return [message, off2 + length];
     }
     case 0b111: {
       switch (byte1) {

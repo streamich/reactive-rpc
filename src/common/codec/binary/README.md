@@ -108,17 +108,20 @@ Notification message consists of:
 *Request Error Message* consists of:
 
 1. Subscription `id`, encoded as unsigned 16 bit integer.
-2. Required binary payload `data`.
+2. Method name `size` byte, encoded as unsigned integer.
+3. Remote `method` name string, encoded as ASCII text.
+4. Optional binary payload `data`.
 
 ```
-+--------+........+--------+--------+========+
-|010?xxxx|?xxxxxxx|        id       |  data  |
-+--------+........+--------+--------+========+
++--------+........+--------+--------+--------+========+========+
+|010?xxxx|?xxxxxxx|        id       |  size  | method |  data  |
++--------+........+--------+--------+--------+========+========+
 ```
 
 - `?` is a bit flag which determines if the following byte should be used for
   decoding a variable length integer.
 - `x` is a variable length unsigned integer that encodes `data` size.
+- When `method` is known from subscription `id`, `size` is set to 0.
 
 
 ### Request Un-subscribe Message

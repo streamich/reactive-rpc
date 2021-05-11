@@ -127,12 +127,13 @@ describe('request', () => {
 
   describe('error message', () => {
     test('encodes an error message', () => {
-      const buf = encoder.encode([new BinaryRequestErrorMessage(0xcccc, new Uint8Array([55]))]);
-      expect(buf.byteLength).toBe(4);
+      const buf = encoder.encode([new BinaryRequestErrorMessage(0xcccc, '', new Uint8Array([55]))]);
+      expect(buf.byteLength).toBe(5);
       expect(buf[0]).toBe((MessageCode.RequestError << 5) | 1);
       expect(buf[1]).toBe(0xcc);
       expect(buf[2]).toBe(0xcc);
-      expect(buf[3]).toBe(55);
+      expect(buf[3]).toBe(0);
+      expect(buf[4]).toBe(55);
     });
   });
 

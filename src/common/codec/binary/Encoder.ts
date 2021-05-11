@@ -34,7 +34,7 @@ export class Encoder {
       else if (message instanceof BinaryRequestCompleteMessage)
         this.msgWithIdAndMethod(MessageCode.RequestComplete, message.id, message.method, message.data);
       else if (message instanceof BinaryRequestErrorMessage)
-        this.msgWithId(MessageCode.RequestError, message.id, message.data);
+        this.msgWithIdAndMethod(MessageCode.RequestError, message.id, message.method, message.data);
       else if (message instanceof BinaryRequestUnsubscribeMessage) this.reqUnsub(message);
       else if (message instanceof BinaryResponseDataMessage) this.resData(message);
       else if (message instanceof BinaryResponseCompleteMessage) this.resComp(message);

@@ -8,6 +8,6 @@ import {RequestErrorMessage} from '../nominal';
 export class BinaryRequestErrorMessage extends RequestErrorMessage<Uint8Array> implements BinaryMessage {
   public size(): number {
     const dataSize = this.data.byteLength;
-    return getHeaderSize(dataSize) + 2 + dataSize;
+    return getHeaderSize(dataSize) + 2 + 1 + this.method.length + dataSize;
   }
 }
