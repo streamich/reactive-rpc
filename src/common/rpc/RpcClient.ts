@@ -1,5 +1,4 @@
-import {isObservable, Observable, Observer, Subject, merge, of} from 'rxjs';
-import {catchError} from 'rxjs/operators';
+import {isObservable, Observable, Observer, Subject} from 'rxjs';
 import {ReactiveRpcRequestMessage, ReactiveRpcResponseMessage, NotificationMessage, RequestCompleteMessage, RequestDataMessage, RequestErrorMessage, RequestUnsubscribeMessage, ResponseCompleteMessage, ResponseDataMessage, ResponseErrorMessage, ResponseUnsubscribeMessage} from '../messages/nominal';
 import {subscribeCompleteObserver} from '../util/subscribeCompleteObserver';
 import {TimedQueue} from '../util/TimedQueue';
@@ -154,17 +153,12 @@ export class RpcClient<T = unknown> {
     if (this.calls.has(id)) return this.call(method, data as any);
     const req$ = new Subject<T>();
     const res$ = new Subject<T>();
-    merge([
-      req$.pipe(catchError(() => of())),
-      res$.pipe(catchError(() => of())),
-    ]).subscribe({
-      error: () => {
-        this.calls.delete(id);
-      },
-      complete: () => {
-        this.calls.delete(id);
-      },
-    });
+    let finalizedStreams = 0;
+    const cleanup = () => {
+      finalizedStreams++;
+      if (finalizedStreams === 2) this.calls.delete(id);
+    };
+    res$.subscribe({error: cleanup, complete: cleanup})
     const entry: ObserverEntry<T> = {req$, res$};
     this.calls.set(id, entry);
     if (isObservable(data)) {
@@ -178,11 +172,13 @@ export class RpcClient<T = unknown> {
           this.buffer.push(message);
         },
         error: (error) => {
+          cleanup();
           const messageMethod = firstMessageSent ? '' : method;
           const message = new RequestErrorMessage<T>(id, messageMethod, error as T);
           this.buffer.push(message);
         },
         complete: (value) => {
+          cleanup();
           const messageMethod = firstMessageSent ? '' : method;
           const message = new RequestCompleteMessage<T>(id, messageMethod, value);
           this.buffer.push(message);
@@ -191,6 +187,7 @@ export class RpcClient<T = unknown> {
     } else {
       this.buffer.push(new RequestCompleteMessage<T>(id, method, data));
       req$.complete();
+      cleanup();
     }
     return new Observable<T>((observer: Observer<T>) => {
       res$.subscribe(observer);
