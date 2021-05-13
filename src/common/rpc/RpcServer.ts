@@ -6,13 +6,13 @@ import {RpcMethod, RpcMethodStatic, RpcMethodStreaming} from './types';
 
 export const enum RpcServerError {
   Unknown = 0,
-  IdTaken,
-  TooManyStreams,
-  InvalidData,
-  NoMethodSpecified,
-  MethodNotFound,
-  ErrorForStaticMethod,
-  Stop,
+  IdTaken = 1,
+  TooManyStreams = 2,
+  InvalidData = 3,
+  NoMethodSpecified = 4,
+  MethodNotFound = 5,
+  ErrorForStaticMethod = 6,
+  Stop = 7,
 }
 
 export interface RpcServerParams<Ctx = unknown, T = unknown> {
@@ -117,16 +117,17 @@ export class RpcServer<Ctx = unknown, T = unknown> {
     return this.activeStreamCalls.size;
   }
 
+  public onMessage(message: ReactiveRpcRequestMessage<T>, ctx: Ctx): void {
+    if (message instanceof RequestDataMessage) this.onRequestData(message, ctx);
+    else if (message instanceof RequestCompleteMessage) this.onRequestComplete(message, ctx);
+    else if (message instanceof RequestErrorMessage) this.onRequestError(message, ctx);
+    else if (message instanceof NotificationMessage) this.onNotification(message, ctx);
+    else if (message instanceof ResponseUnsubscribeMessage) this.onUnsubscribe(message);
+  }
+
   public onMessages(messages: ReactiveRpcRequestMessage<T>[], ctx: Ctx): void {
     const length = messages.length;
-    for (let i = 0; i < length; i++) {
-      const message = messages[i];
-      if (message instanceof RequestDataMessage) this.onRequestData(message, ctx);
-      else if (message instanceof RequestCompleteMessage) this.onRequestComplete(message, ctx);
-      else if (message instanceof RequestErrorMessage) this.onRequestError(message, ctx);
-      else if (message instanceof NotificationMessage) this.onNotification(message, ctx);
-      else if (message instanceof ResponseUnsubscribeMessage) this.onUnsubscribe(message);
-    }
+    for (let i = 0; i < length; i++) this.onMessage(messages[i], ctx);
   }
 
   public stop() {
@@ -165,16 +166,30 @@ export class RpcServer<Ctx = unknown, T = unknown> {
     const request$ = new Observable<T>((observer) => {
       streamCall.req$.subscribe(observer);
       return () => {
-        this.send(new RequestUnsubscribeMessage(id));
+        if (!streamCall.reqFinalized)
+          this.send(new RequestUnsubscribeMessage(id));
         streamCall.req$.complete();
       };
     });
+    const onReqFinalize = () => {
+      if (streamCall.resFinalized) this.activeStreamCalls.delete(id);
+      else streamCall.reqFinalized = true;
+    };
+    streamCall.req$.subscribe({error: onReqFinalize, complete: onReqFinalize});
     const response$ = rpcMethodStreaming.call(ctx, request$);
     response$.subscribe(streamCall.res$);
     subscribeCompleteObserver<T>(streamCall.res$, {
       next: (value: T) => this.send(new ResponseDataMessage<T>(id, value)),
-      error: (error: unknown) => this.send(new ResponseErrorMessage<T>(id, this.formatError(error))),
-      complete: (value: T | undefined) => this.send(new ResponseCompleteMessage<T>(id, value)),
+      error: (error: unknown) => {
+        if (streamCall.reqFinalized) this.activeStreamCalls.delete(id);
+        else streamCall.resFinalized = true;
+        this.send(new ResponseErrorMessage<T>(id, this.formatError(error)));
+      },
+      complete: (value: T | undefined) => {
+        if (streamCall.reqFinalized) this.activeStreamCalls.delete(id);
+        else streamCall.resFinalized = true;
+        this.send(new ResponseCompleteMessage<T>(id, value));
+      },
     });
     return streamCall;
   }
@@ -196,6 +211,7 @@ export class RpcServer<Ctx = unknown, T = unknown> {
     const {id, method, data} = message;
     const call = this.activeStreamCalls.get(id);
     if (call) {
+      call.reqFinalized = true;
       const {req$} = call;
       if (data !== undefined) req$.next(data as T);
       return req$.complete();
@@ -206,6 +222,7 @@ export class RpcServer<Ctx = unknown, T = unknown> {
     if (!rpcMethod.isStreaming) return this.execStaticCall(id, rpcMethod.call, data as T, ctx);
     const streamCall = this.createStreamCall(id, rpcMethod, ctx);
     if (!streamCall) return;
+    streamCall.reqFinalized = true;
     const {req$} = streamCall;
     if (data !== undefined) req$.next(data);
     req$.complete();
@@ -214,7 +231,10 @@ export class RpcServer<Ctx = unknown, T = unknown> {
   private onRequestError(message: RequestErrorMessage, ctx: Ctx): void {
     const {id, method, data} = message;
     const call = this.activeStreamCalls.get(id);
-    if (call) return call.req$.error(data);
+    if (call) {
+      call.reqFinalized = true;
+      return call.req$.error(data);
+    }
     if (!method) return this.sendError(id, RpcServerError.NoMethodSpecified);
     const rpcMethod = this.getRpcMethod(method);
     if (!rpcMethod) return this.sendError(id, RpcServerError.MethodNotFound);
