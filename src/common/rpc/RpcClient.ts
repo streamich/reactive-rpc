@@ -216,8 +216,8 @@ export class RpcClient<T = unknown> {
   public stop(): void {
     this.buffer.onFlush = (message) => {};
     for (const call of this.calls.values()) {
-      call.req$.complete();
-      call.req$.complete();
+      call.req$.error(new Error('STOP'));
+      call.req$.error(new Error('STOP'));
     }
     this.calls.clear();
   }
