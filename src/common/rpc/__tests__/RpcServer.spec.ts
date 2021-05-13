@@ -401,94 +401,122 @@ test('stops sending messages after server stop()', async () => {
   expect(send).toHaveBeenCalledTimes(1);
 });
 
-// describe('buffering', () => {
-//   test('batches messages received within buffering window', async () => {
-//     const send = jest.fn();
-//     const call: any = jest.fn(async (name, payload, ctx) => Buffer.from(JSON.stringify([name, payload[0], ctx])));
-//     const notify = jest.fn();
-//     const server = new BinaryRxServer({send, call, notify, bufferTime: 1});
-//     server.onArray(encoder.encode([new SubscribeMessage(1, 'a', Buffer.from('a'))]), {ctx: 1});
-//     server.onArray(encoder.encode([new SubscribeMessage(2, 'b', Buffer.from('b'))]), {ctx: 2});
-//     expect(send).toHaveBeenCalledTimes(0);
-//     await new Promise((r) => setTimeout(r, 10));
-//     expect(send).toHaveBeenCalledTimes(1);
-//     expect(send.mock.calls[0][0]).toEqual(
-//       encoder.encode([
-//         new CompleteMessage(1, Buffer.from(JSON.stringify(['a', Buffer.from('a')[0], {ctx: 1}]))),
-//         new CompleteMessage(2, Buffer.from(JSON.stringify(['b', Buffer.from('b')[0], {ctx: 2}]))),
-//       ]),
-//     );
-//   });
+describe('buffering', () => {
+  test('batches messages received within buffering window', async () => {
+    const {server, send, getRpcMethod, notify, ctx, subject} = setup({
+      bufferTime: 1,
+      getRpcMethod: () => ({
+        isStreaming: false,
+        call: async () => 123,
+      })
+    });
+    server.onMessage(new RequestCompleteMessage(1, 'method1', Buffer.from('a')), {ctx: 1});
+    server.onMessage(new RequestCompleteMessage(2, 'method2', Buffer.from('b')), {ctx: 2});
+    expect(send).toHaveBeenCalledTimes(0);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0]).toEqual(
+      [
+        new ResponseCompleteMessage(1, 123),
+        new ResponseCompleteMessage(2, 123),
+      ],
+    );
+    expect(send.mock.calls[0][0][0]).toBeInstanceOf(ResponseCompleteMessage);
+    expect(send.mock.calls[0][0][1]).toBeInstanceOf(ResponseCompleteMessage);
+  });
 
-//   test('batches errors received within buffering window', async () => {
-//     const send = jest.fn();
-//     const call: any = jest.fn(async (name, payload, ctx) => {
-//       // tslint:disable-next-line
-//       throw Buffer.from('foo');
-//     });
-//     const notify = jest.fn();
-//     const server = new BinaryRxServer({send, call, notify, bufferTime: 1});
-//     server.onArray(encoder.encode([new SubscribeMessage(1, 'a', Buffer.from('a'))]), {ctx: 1});
-//     server.onArray(encoder.encode([new SubscribeMessage(2, 'b', Buffer.from('b'))]), {ctx: 2});
-//     expect(send).toHaveBeenCalledTimes(0);
-//     await new Promise((r) => setTimeout(r, 10));
-//     expect(send).toHaveBeenCalledTimes(1);
-//     expect(send.mock.calls[0][0]).toEqual(
-//       encoder.encode([new ErrorMessage(1, Buffer.from('foo')), new ErrorMessage(2, Buffer.from('foo'))]),
-//     );
-//   });
+  test('batches errors received within buffering window', async () => {
+    const {server, send, getRpcMethod, notify, ctx, subject} = setup({bufferTime: 1});
+    server.onMessage(new RequestCompleteMessage(1, 'not_exist_1', Buffer.from('a')), {ctx: 1});
+    server.onMessage(new RequestCompleteMessage(2, 'not_exist_2', Buffer.from('b')), {ctx: 2});
+    expect(send).toHaveBeenCalledTimes(0);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0]).toEqual(
+      [
+        new ResponseErrorMessage(1, JSON.stringify({code: RpcServerError.MethodNotFound})),
+        new ResponseErrorMessage(2, JSON.stringify({code: RpcServerError.MethodNotFound})),
+      ],
+    );
+    expect(send.mock.calls[0][0][0]).toBeInstanceOf(ResponseErrorMessage);
+    expect(send.mock.calls[0][0][1]).toBeInstanceOf(ResponseErrorMessage);
+  });
 
-//   test('does not batch consecutive messages when buffering is disabled', async () => {
-//     const send = jest.fn();
-//     const call: any = jest.fn(async (name, payload, ctx) => Buffer.from(JSON.stringify([name, payload[0], ctx])));
-//     const notify = jest.fn();
-//     const server = new BinaryRxServer({send, call, notify, bufferTime: 0});
-//     server.onArray(encoder.encode([new SubscribeMessage(1, 'a', Buffer.from('a'))]), {ctx: 1});
-//     server.onArray(encoder.encode([new SubscribeMessage(2, 'b', Buffer.from('b'))]), {ctx: 2});
-//     expect(send).toHaveBeenCalledTimes(0);
-//     await new Promise((r) => setTimeout(r, 10));
-//     expect(send).toHaveBeenCalledTimes(2);
-//     expect(send.mock.calls[0][0]).toEqual(
-//       encoder.encode([new CompleteMessage(1, Buffer.from(JSON.stringify(['a', Buffer.from('a')[0], {ctx: 1}])))]),
-//     );
-//     expect(send.mock.calls[1][0]).toEqual(
-//       encoder.encode([new CompleteMessage(2, Buffer.from(JSON.stringify(['b', Buffer.from('b')[0], {ctx: 2}])))]),
-//     );
-//   });
+  test('does not batch consecutive messages when buffering is disabled', async () => {
+    const {server, send, getRpcMethod, notify, ctx, subject} = setup({
+      bufferTime: 0,
+      getRpcMethod: () => ({
+        isStreaming: false,
+        call: async () => 123,
+      })
+    });
+    server.onMessage(new RequestCompleteMessage(1, 'not_exist_1', Buffer.from('a')), {ctx: 1});
+    server.onMessage(new RequestCompleteMessage(2, 'not_exist_2', Buffer.from('b')), {ctx: 2});
+    expect(send).toHaveBeenCalledTimes(0);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(send.mock.calls[0][0]).toEqual(
+      [
+        new ResponseCompleteMessage(1, 123),
+      ],
+    );
+    expect(send.mock.calls[1][0]).toEqual(
+      [
+        new ResponseCompleteMessage(2, 123),
+      ],
+    );
+    expect(send.mock.calls[0][0][0]).toBeInstanceOf(ResponseCompleteMessage);
+    expect(send.mock.calls[1][0][0]).toBeInstanceOf(ResponseCompleteMessage);
+  });
 
-//   test('does not batch messages when they are far apart', async () => {
-//     const send = jest.fn();
-//     const call: any = jest.fn(async (name, payload, ctx) => Buffer.from(JSON.stringify([name, payload[0], ctx])));
-//     const notify = jest.fn();
-//     const server = new BinaryRxServer({send, call, notify, bufferTime: 1});
-//     server.onArray(encoder.encode([new SubscribeMessage(1, 'a', Buffer.from('a'))]), {ctx: 1});
-//     await new Promise((r) => setTimeout(r, 10));
-//     server.onArray(encoder.encode([new SubscribeMessage(2, 'b', Buffer.from('b'))]), {ctx: 2});
-//     await new Promise((r) => setTimeout(r, 10));
-//     expect(send).toHaveBeenCalledTimes(2);
-//     expect(send.mock.calls[0][0]).toEqual(
-//       encoder.encode([new CompleteMessage(1, Buffer.from(JSON.stringify(['a', Buffer.from('a')[0], {ctx: 1}])))]),
-//     );
-//     expect(send.mock.calls[1][0]).toEqual(
-//       encoder.encode([new CompleteMessage(2, Buffer.from(JSON.stringify(['b', Buffer.from('b')[0], {ctx: 2}])))]),
-//     );
-//   });
+  test('does not batch messages when they are far apart', async () => {
+    const {server, send, getRpcMethod, notify, ctx, subject} = setup({
+      bufferTime: 1,
+      getRpcMethod: () => ({
+        isStreaming: false,
+        call: async () => 123,
+      })
+    });
+    server.onMessage(new RequestCompleteMessage(1, 'not_exist_1', Buffer.from('a')), {ctx: 1});
+    await new Promise((r) => setTimeout(r, 10));
+    server.onMessage(new RequestCompleteMessage(2, 'not_exist_2', Buffer.from('b')), {ctx: 2});
+    await new Promise((r) => setTimeout(r, 10));
+    expect(send).toHaveBeenCalledTimes(2);
+    expect(send.mock.calls[0][0]).toEqual(
+      [
+        new ResponseCompleteMessage(1, 123),
+      ],
+    );
+    expect(send.mock.calls[1][0]).toEqual(
+      [
+        new ResponseCompleteMessage(2, 123),
+      ],
+    );
+    expect(send.mock.calls[0][0][0]).toBeInstanceOf(ResponseCompleteMessage);
+    expect(send.mock.calls[1][0][0]).toBeInstanceOf(ResponseCompleteMessage);
+  });
 
-//   test('batches and sends out messages when buffer is filled up', async () => {
-//     const send = jest.fn();
-//     const call: any = jest.fn(async (name, payload, ctx) => Buffer.from(JSON.stringify([name, payload[0], ctx])));
-//     const notify = jest.fn();
-//     const server = new BinaryRxServer({send, call, notify, bufferTime: 1, bufferSize: 2});
-//     server.onArray(encoder.encode([new SubscribeMessage(1, 'a', Buffer.from('a'))]), {ctx: 1});
-//     server.onArray(encoder.encode([new SubscribeMessage(2, 'b', Buffer.from('b'))]), {ctx: 2});
-//     await new Promise((r) => setImmediate(r));
-//     await new Promise((r) => setTimeout(r, 10));
-//     expect(send).toHaveBeenCalledTimes(1);
-//     expect(send.mock.calls[0][0]).toEqual(
-//       encoder.encode([
-//         new CompleteMessage(1, Buffer.from(JSON.stringify(['a', Buffer.from('a')[0], {ctx: 1}]))),
-//         new CompleteMessage(2, Buffer.from(JSON.stringify(['b', Buffer.from('b')[0], {ctx: 2}]))),
-//       ]),
-//     );
-//   });
-// });
+  test('batches and sends out messages when buffer is filled up', async () => {
+    const {server, send, getRpcMethod, notify, ctx, subject} = setup({
+      bufferTime: 100,
+      bufferSize: 2,
+      getRpcMethod: () => ({
+        isStreaming: false,
+        call: async () => 123,
+      })
+    });
+    server.onMessage(new RequestCompleteMessage(1, 'method1', Buffer.from('a')), {ctx: 1});
+    server.onMessage(new RequestCompleteMessage(2, 'method2', Buffer.from('b')), {ctx: 2});
+    expect(send).toHaveBeenCalledTimes(0);
+    await new Promise((r) => setTimeout(r, 10));
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send.mock.calls[0][0]).toEqual(
+      [
+        new ResponseCompleteMessage(1, 123),
+        new ResponseCompleteMessage(2, 123),
+      ],
+    );
+    expect(send.mock.calls[0][0][0]).toBeInstanceOf(ResponseCompleteMessage);
+    expect(send.mock.calls[0][0][1]).toBeInstanceOf(ResponseCompleteMessage);
+  });
+});
