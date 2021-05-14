@@ -7,8 +7,11 @@ export class Decoder {
   protected msgpack = new MessagePackDecoder();
 
   protected convertMessage(message: ReactiveRpcBinaryMessage): ReactiveRpcMessage {
-    if ((message as Message).data !== undefined)
-      (message as Message).data = this.msgpack.decode((message as Message).data as Uint8Array);
+    const data = (message as Message).data;
+    if (data instanceof Uint8Array) {
+      if (!data.byteLength) (message as Message).data = undefined;
+      else (message as Message).data = this.msgpack.decode(data);
+    }
     return message;
   }
 
