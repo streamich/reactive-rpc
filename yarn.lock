@@ -6228,7 +6228,7 @@ trim-repeated@^1.0.0:
   dependencies:
     escape-string-regexp "^1.0.2"
 
-ts-brand-json@0.1.1:
+ts-brand-json@0.1.1, ts-brand-json@^0.1.1:
   version "0.1.1"
   resolved "https://registry.yarnpkg.com/ts-brand-json/-/ts-brand-json-0.1.1.tgz#3b34bf9aaff5dd8794222973f6b0ea95a7be82c7"
   integrity sha512-2Lb/g531rUtKBLlXnJDmWbEE+Mzv4SuxNDSVqWB2HHS5AJZ9Yh4bl6wFaNsAqWnhDg0zD3zi/oGhS//cDINQpw==

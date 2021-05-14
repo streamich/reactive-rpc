@@ -40,7 +40,8 @@
     "tslib": "^2.2.0"
   },
   "dependencies": {
-    "json-joy": "^2.11.0"
+    "json-joy": "^2.11.0",
+    "ts-brand-json": "^0.1.1"
   },
   "devDependencies": {
     "@semantic-release/changelog": "^5.0.1",
