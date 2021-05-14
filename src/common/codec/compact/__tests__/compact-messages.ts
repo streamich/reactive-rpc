@@ -28,10 +28,10 @@ const reqComplete4: CompactRequestCompleteMessage = [1234, 1, 'a.b.c.c.d.a', {}]
 const reqComplete5: CompactRequestCompleteMessage = [1234, 1, 'a.b.c.c.d.a', []];
 const reqComplete6: CompactRequestCompleteMessage = [12345, 1, 'a.b.c.c.d.a', {foo: {bar: 'test'}}];
 
-const reqError1: CompactRequestErrorMessage = [1, 2, {}];
-const reqError2: CompactRequestErrorMessage = [5, 2, {a: 'b'}];
-const reqError3: CompactRequestErrorMessage = [15, 2, {a: [1,2,3]}];
-const reqError4: CompactRequestErrorMessage = [55555, 2, {
+const reqError1: CompactRequestErrorMessage = [1, 2, '', {}];
+const reqError2: CompactRequestErrorMessage = [5, 2, '', {a: 'b'}];
+const reqError3: CompactRequestErrorMessage = [15, 2, 'hmm', {a: [1,2,3]}];
+const reqError4: CompactRequestErrorMessage = [55555, 2, '', {
   message: 'Some error happened',
   code: 'SOME_ERROR',
   errno: 94849,
