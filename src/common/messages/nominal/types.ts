@@ -36,5 +36,6 @@ export type ReactiveRpcMessage<D = unknown> =
   | ReactiveRpcResponseMessage<D>;
 
 export interface Message {
+  data?: undefined | unknown;
   toCompact(): CompactMessage;
 }
