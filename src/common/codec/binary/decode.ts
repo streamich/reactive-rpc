@@ -108,10 +108,9 @@ export const decodeFullMessage = (
  *
  * @category Codec
  */
-export const decodeFullMessages = (arr: Uint8Array, offset: number): ReactiveRpcBinaryMessage[] => {
+export const decodeFullMessages = (arr: Uint8Array, offset: number, end: number): ReactiveRpcBinaryMessage[] => {
   const messages: ReactiveRpcBinaryMessage[] = [];
-  const length = arr.length;
-  while (offset < length) {
+  while (offset < end) {
     const [message, off] = decodeFullMessage(arr, offset);
     offset = off;
     messages.push(message);

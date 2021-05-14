@@ -17,7 +17,7 @@ const encoder = new Encoder();
 test('decodes a simple un-subscribe message', () => {
   const messages1 = [new BinaryResponseUnsubscribeMessage(5)];
   const buf = encoder.encode(messages1);
-  const messages2 = decodeFullMessages(buf, 0);
+  const messages2 = decodeFullMessages(buf, 0, buf.length);
   expect(messages2).toEqual(messages1);
 });
 
@@ -45,7 +45,7 @@ test('decodes all message types', () => {
     new BinaryResponseUnsubscribeMessage(0xaaaa),
   ];
   const buf = encoder.encode(messages1);
-  const messages2 = decodeFullMessages(buf, 0);
+  const messages2 = decodeFullMessages(buf, 0, buf.length);
   expect(messages2).toEqual(messages1);
 });
 
@@ -56,7 +56,7 @@ test('decodes long messages', () => {
     new BinaryResponseUnsubscribeMessage(0xaaaa),
   ];
   const buf = encoder.encode(messages1);
-  const messages2 = decodeFullMessages(buf, 0);
+  const messages2 = decodeFullMessages(buf, 0, buf.length);
   expect(messages2).toEqual(messages1);
 });
 
@@ -71,7 +71,7 @@ test('decodes long messages - 2', () => {
     new BinaryResponseUnsubscribeMessage(0xaaaa),
   ];
   const buf = encoder.encode(messages1);
-  const messages2 = decodeFullMessages(buf, 0);
+  const messages2 = decodeFullMessages(buf, 0, buf.length);
   expect(messages2).toEqual(messages1);
 });
 
@@ -86,6 +86,6 @@ test('decodes long messages - 3', () => {
     new BinaryResponseUnsubscribeMessage(0xaaaa),
   ];
   const buf = encoder.encode(messages1);
-  const messages2 = decodeFullMessages(buf, 0);
+  const messages2 = decodeFullMessages(buf, 0, buf.length);
   expect(messages2).toEqual(messages1);
 });
