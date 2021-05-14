@@ -59,8 +59,8 @@ export function decodeMsg(message: CompactMessage): Message {
             return new RequestCompleteMessage(first, name, data);
           }
           case 2: {
-            const [, , data] = message as CompactRequestErrorMessage;
-            return new RequestErrorMessage(first, data);
+            const [, , method, data] = message as CompactRequestErrorMessage;
+            return new RequestErrorMessage(first, method, data);
           }
           case 3: {
             return new RequestUnsubscribeMessage(first);
