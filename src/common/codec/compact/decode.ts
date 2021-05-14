@@ -8,8 +8,8 @@ import {
   ResponseDataMessage,
   ResponseErrorMessage,
   ResponseUnsubscribeMessage,
+  ReactiveRpcMessage
 } from '../../messages/nominal';
-import type {Message} from '../../messages/nominal/types';
 import type {
   CompactMessage,
   CompactNotificationMessage,
@@ -23,20 +23,20 @@ import type {
   CompactResponseUnsubscribeMessage,
 } from './types';
 
-export function decodeMsg(message: CompactMessage): Message {
+export function decodeMsg<T = unknown>(message: CompactMessage): ReactiveRpcMessage<T> {
   const first = message[0];
   if (typeof first === 'number') {
     switch (first) {
       case 0: {
-        const [, id, data] = message as CompactResponseDataMessage;
+        const [, id, data] = message as CompactResponseDataMessage<T>;
         return new ResponseDataMessage(id, data);
       }
       case -1: {
-        const [, id, data] = message as CompactResponseCompleteMessage;
+        const [, id, data] = message as CompactResponseCompleteMessage<T>;
         return new ResponseCompleteMessage(id, data);
       }
       case -2: {
-        const [, id, data] = message as CompactResponseErrorMessage;
+        const [, id, data] = message as CompactResponseErrorMessage<T>;
         return new ResponseErrorMessage(id, data);
       }
       case -3: {
@@ -51,15 +51,15 @@ export function decodeMsg(message: CompactMessage): Message {
           | CompactRequestUnsubscribeMessage;
         switch (second) {
           case 0: {
-            const [, , name, data] = message as CompactRequestDataMessage;
+            const [, , name, data] = message as CompactRequestDataMessage<T>;
             return new RequestDataMessage(first, name, data);
           }
           case 1: {
-            const [, , name, data] = message as CompactRequestCompleteMessage;
+            const [, , name, data] = message as CompactRequestCompleteMessage<T>;
             return new RequestCompleteMessage(first, name, data);
           }
           case 2: {
-            const [, , method, data] = message as CompactRequestErrorMessage;
+            const [, , method, data] = message as CompactRequestErrorMessage<T>;
             return new RequestErrorMessage(first, method, data);
           }
           case 3: {
@@ -69,13 +69,13 @@ export function decodeMsg(message: CompactMessage): Message {
       }
     }
   }
-  const [method, data] = message as CompactNotificationMessage;
+  const [method, data] = message as CompactNotificationMessage<T>;
   return new NotificationMessage(method, data);
 }
 
-export function decode(messages: CompactMessage[]): Message[] {
+export function decode<T = unknown>(messages: CompactMessage[]): ReactiveRpcMessage<T>[] {
   const length = messages.length;
-  const out: Message[] = [];
-  for (let i = 0; i < length; i++) out.push(decodeMsg(messages[i]));
+  const out: ReactiveRpcMessage<T>[] = [];
+  for (let i = 0; i < length; i++) out.push(decodeMsg<T>(messages[i]));
   return out;
 }
