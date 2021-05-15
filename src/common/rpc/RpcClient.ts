@@ -94,39 +94,57 @@ export class RpcClient<T = unknown> {
   }
 
   /**
+   * Processes a message received from the server.
+   * 
+   * @param messages A message from the server.
+   */
+  public onMessage(message: ReactiveRpcResponseMessage<T>): void {
+    if (message instanceof ResponseCompleteMessage) return this.onResponseComplete(message);
+    else if (message instanceof ResponseDataMessage) return this.onResponseData(message);
+    else if (message instanceof ResponseErrorMessage) return this.onResponseError(message);
+    // else if (message instanceof RequestUnsubscribeMessage) return this.onRequestUnsubscribe(message);
+    return this.onRequestUnsubscribe(message);
+  }
+
+  public onResponseComplete(message: ResponseCompleteMessage<T>): void {
+    const {id, data} = message;
+    const call = this.calls.get(id);
+    if (!call) return;
+    call.resFinalized = true;
+    if (data !== undefined) call.res$.next(data);
+    call.res$.complete();
+  }
+
+  public onResponseData(message: ResponseDataMessage<T>): void {
+    const {id, data} = message;
+    const call = this.calls.get(id);
+    if (!call) return;
+    call.res$.next(data);
+  }
+
+  public onResponseError(message: ResponseErrorMessage<T>): void {
+    const {id, data} = message;
+    const call = this.calls.get(id);
+    if (!call) return;
+    call.resFinalized = true;
+    call.res$.error(data);
+  }
+
+  public onRequestUnsubscribe(message: RequestUnsubscribeMessage): void {
+    const {id} = message;
+    const call = this.calls.get(id);
+    if (!call) return;
+    call.req$.complete();
+  }
+
+  /**
    * Processes a batch of messages received from the server.
    * 
    * @param messages List of messages from server.
    */
   public onMessages(messages: ReactiveRpcResponseMessage<T>[]): void {
     const length = messages.length;
-    for (let i = 0; i < length; i++) {
-      const message = messages[i];
-      if (message instanceof ResponseCompleteMessage) {
-        const {id, data} = message;
-        const call = this.calls.get(id);
-        if (!call) return;
-        call.resFinalized = true;
-        if (data !== undefined) call.res$.next(data);
-        call.res$.complete();
-      } else if (message instanceof ResponseDataMessage) {
-        const {id, data} = message;
-        const call = this.calls.get(id);
-        if (!call) return;
-        call.res$.next(data);
-      } else if (message instanceof ResponseErrorMessage) {
-        const {id, data} = message;
-        const call = this.calls.get(id);
-        if (!call) return;
-        call.resFinalized = true;
-        call.res$.error(data);
-      } else if (message instanceof RequestUnsubscribeMessage) {
-        const {id} = message;
-        const call = this.calls.get(id);
-        if (!call) return;
-        call.req$.complete();
-      }
-    }
+    for (let i = 0; i < length; i++) this.onMessage(messages[i]);
   }
 
   /**

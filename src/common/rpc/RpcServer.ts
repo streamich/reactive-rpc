@@ -194,7 +194,7 @@ export class RpcServer<Ctx = unknown, T = unknown> {
     return streamCall;
   }
 
-  private onRequestData(message: RequestDataMessage<T>, ctx: Ctx): void {
+  public onRequestData(message: RequestDataMessage<T>, ctx: Ctx): void {
     const {id, method, data} = message;
     const call = this.activeStreamCalls.get(id);
     if (call) return call.req$.next(data as T);
@@ -207,7 +207,7 @@ export class RpcServer<Ctx = unknown, T = unknown> {
     if (data !== undefined) streamCall.req$.next(data);
   }
 
-  private onRequestComplete(message: RequestCompleteMessage<T>, ctx: Ctx): void {
+  public onRequestComplete(message: RequestCompleteMessage<T>, ctx: Ctx): void {
     const {id, method, data} = message;
     const call = this.activeStreamCalls.get(id);
     if (call) {
@@ -228,7 +228,7 @@ export class RpcServer<Ctx = unknown, T = unknown> {
     req$.complete();
   }
 
-  private onRequestError(message: RequestErrorMessage, ctx: Ctx): void {
+  public onRequestError(message: RequestErrorMessage, ctx: Ctx): void {
     const {id, method, data} = message;
     const call = this.activeStreamCalls.get(id);
     if (call) {
@@ -244,14 +244,14 @@ export class RpcServer<Ctx = unknown, T = unknown> {
     streamCall.req$.error(data);
   }
 
-  private onUnsubscribe(message: ResponseUnsubscribeMessage): void {
+  public onUnsubscribe(message: ResponseUnsubscribeMessage): void {
     const {id} = message;
     const call = this.activeStreamCalls.get(id);
     if (!call) return;
     call.res$.complete();
   }
 
-  private onNotification(message: NotificationMessage<T>, ctx: Ctx): void {
+  public onNotification(message: NotificationMessage<T>, ctx: Ctx): void {
     const {method, data} = message;
     this.notify(method, data, ctx);
   }
