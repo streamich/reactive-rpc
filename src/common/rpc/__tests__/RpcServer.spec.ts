@@ -266,7 +266,7 @@ test('when observable completes asynchronously and emits asynchronously, sends e
 });
 
 test('sends error when subscription limit is exceeded', async () => {
-  const {server, send, getRpcMethod, notify, ctx, subject} = setup({maxActiveStreams: 5, bufferTime: 0});
+  const {server, send, getRpcMethod, notify, ctx, subject} = setup({maxActiveCalls: 5, bufferTime: 0});
   expect(getRpcMethod).toHaveBeenCalledTimes(0);
   expect(send).toHaveBeenCalledTimes(0);
   server.onMessages([new RequestCompleteMessage(1, 'subject', new Uint8Array([1]))], undefined);
@@ -288,12 +288,39 @@ test('sends error when subscription limit is exceeded', async () => {
   expect(getRpcMethod).toHaveBeenCalledTimes(6);
   expect(send).toHaveBeenCalledTimes(1);
   expect(send.mock.calls[0][0]).toEqual(
-    [new ResponseErrorMessage(6, JSON.stringify({code: RpcServerError.TooManyStreams}))],
+    [new ResponseErrorMessage(6, JSON.stringify({code: RpcServerError.TooManyActiveCalls}))],
+  );
+});
+
+test('sends error when subscription limit is exceeded including static calls', async () => {
+  const {server, send, getRpcMethod, notify, ctx, subject} = setup({maxActiveCalls: 5, bufferTime: 0});
+  expect(getRpcMethod).toHaveBeenCalledTimes(0);
+  expect(send).toHaveBeenCalledTimes(0);
+  server.onMessages([new RequestCompleteMessage(1, 'ping', new Uint8Array([1]))], undefined);
+  expect(getRpcMethod).toHaveBeenCalledTimes(1);
+  expect(send).toHaveBeenCalledTimes(0);
+  server.onMessages([new RequestCompleteMessage(2, 'ping', new Uint8Array([2]))], undefined);
+  expect(getRpcMethod).toHaveBeenCalledTimes(2);
+  expect(send).toHaveBeenCalledTimes(0);
+  server.onMessages([new RequestCompleteMessage(3, 'subject', new Uint8Array([3]))], undefined);
+  expect(getRpcMethod).toHaveBeenCalledTimes(3);
+  expect(send).toHaveBeenCalledTimes(0);
+  server.onMessages([new RequestCompleteMessage(4, 'subject', new Uint8Array([4]))], undefined);
+  expect(getRpcMethod).toHaveBeenCalledTimes(4);
+  expect(send).toHaveBeenCalledTimes(0);
+  server.onMessages([new RequestCompleteMessage(5, 'subject', new Uint8Array([5]))], undefined);
+  expect(getRpcMethod).toHaveBeenCalledTimes(5);
+  expect(send).toHaveBeenCalledTimes(0);
+  server.onMessages([new RequestCompleteMessage(6, 'subject', new Uint8Array([6]))], undefined);
+  expect(getRpcMethod).toHaveBeenCalledTimes(6);
+  expect(send).toHaveBeenCalledTimes(1);
+  expect(send.mock.calls[0][0]).toEqual(
+    [new ResponseErrorMessage(6, JSON.stringify({code: RpcServerError.TooManyActiveCalls}))],
   );
 });
 
 test('subscription counter goes down on unsubscribe', async () => {
-  const {server, send, getRpcMethod, notify, ctx, subject} = setup({maxActiveStreams: 5, bufferTime: 0});
+  const {server, send, getRpcMethod, notify, ctx, subject} = setup({maxActiveCalls: 5, bufferTime: 0});
   expect(server.getInflightCallCount()).toBe(0);
   expect(send).toHaveBeenCalledTimes(0);
   server.onMessages([new RequestCompleteMessage(1, 'subject', new Uint8Array([1]))], undefined);

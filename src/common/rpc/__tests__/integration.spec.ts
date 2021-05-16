@@ -16,6 +16,7 @@ const setup = (params: {server?: Partial<RpcServerFromApiParams>, client?: Parti
     api: sampleApi,
     bufferSize: 2,
     bufferTime: 1,
+    maxActiveCalls: 3,
     formatError: (error: unknown) => {
       if (error instanceof Error) return {message: error.message};
       return error;
@@ -67,4 +68,13 @@ test('can receive one value of stream that ends after emitting one value', async
     commit: 'AAAAAAAAAAAAAAAAAAA',
     sha1: 'BBBBBBBBBBBBBBBBBBB',
   });
+});
+
+test('can execute two request in parallel', async () => {
+  const {client} = setup();
+  const promise1 = of(firstValueFrom(client.call('double', {num: 1})));
+  const promise2 = of(firstValueFrom(client.call('double', {num: 2})));
+  const [res1, res2] = await Promise.all([promise1, promise2]);
+  expect(res1[0]).toEqual({num: 2});
+  expect(res2[0]).toEqual({num: 4});
 });

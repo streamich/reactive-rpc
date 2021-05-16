@@ -7,7 +7,7 @@ import {RpcApi, RpcMethod, RpcMethodStatic, RpcMethodStreaming} from './types';
 export const enum RpcServerError {
   Unknown = 0,
   IdTaken = 1,
-  TooManyStreams = 2,
+  TooManyActiveCalls = 2,
   InvalidData = 3,
   NoMethodSpecified = 4,
   MethodNotFound = 5,
@@ -46,7 +46,7 @@ export interface RpcServerParams<Ctx = unknown, T = unknown> {
    * Maximum number of active subscription in flight. This also includes
    * in-flight request/response subscriptions.
    */
-  maxActiveStreams?: number;
+  maxActiveCalls?: number;
 
   /**
    * Number of messages to keep in buffer before sending them out.
@@ -87,13 +87,14 @@ export class RpcServer<Ctx = unknown, T = unknown> {
     return server;
   }
 
+  private activeStaticCalls: number = 0;
   private send: (message: ReactiveRpcResponseMessage<T>) => void;
   private getRpcMethod: RpcServerParams<Ctx, T>['getRpcMethod'];
   private notify: RpcServerParams<Ctx, T>['notify'];
   private readonly formatError: (error: Error | unknown) => T;
   private readonly formatErrorCode: (code: RpcServerError) => T;
   private readonly activeStreamCalls: Map<number, StreamCall<T>> = new Map();
-  private readonly maxActiveStreams: number;
+  private readonly maxActiveCalls: number;
 
   constructor({
     send,
@@ -101,7 +102,7 @@ export class RpcServer<Ctx = unknown, T = unknown> {
     notify,
     formatErrorCode,
     formatError,
-    maxActiveStreams: maxActiveSubscriptions = 30,
+    maxActiveCalls = 30,
     bufferSize = 10,
     bufferTime = 1,
   }: RpcServerParams<Ctx, T>) {
@@ -109,7 +110,7 @@ export class RpcServer<Ctx = unknown, T = unknown> {
     this.notify = notify;
     this.formatError = formatError;
     this.formatErrorCode = formatErrorCode || formatError;
-    this.maxActiveStreams = maxActiveSubscriptions;
+    this.maxActiveCalls = maxActiveCalls;
     if (bufferTime) {
       const buffer = new TimedQueue<ReactiveRpcResponseMessage>();
       buffer.itemLimit = bufferSize;
@@ -130,7 +131,7 @@ export class RpcServer<Ctx = unknown, T = unknown> {
    * @returns Number of in-flight RPC calls.
    */
    public getInflightCallCount(): number {
-    return this.activeStreamCalls.size;
+    return this.activeStaticCalls + this.activeStreamCalls.size;
   }
 
   public onMessage(message: ReactiveRpcRequestMessage<T>, ctx: Ctx): void {
@@ -163,18 +164,25 @@ export class RpcServer<Ctx = unknown, T = unknown> {
   }
 
   private execStaticCall(id: number, call: RpcMethodStatic<Ctx, T, T>['call'], request: T, ctx: Ctx) {
+    if (this.getInflightCallCount() >= this.maxActiveCalls) {
+      this.sendError(id, RpcServerError.TooManyActiveCalls);
+      return;
+    }
+    this.activeStaticCalls++;
     call(ctx, request)
       .then(response => {
+        this.activeStaticCalls--;
         this.send(new ResponseCompleteMessage<T>(id, response));
       })
       .catch(error => {
+        this.activeStaticCalls--;
         this.send(new ResponseErrorMessage<T>(id, error));
       });
   }
 
   private createStreamCall(id: number, rpcMethodStreaming: RpcMethodStreaming<Ctx, T, T>, ctx: Ctx): StreamCall<T> | undefined {
-    if (this.activeStreamCalls.size >= this.maxActiveStreams) {
-      this.sendError(id, RpcServerError.TooManyStreams);
+    if (this.getInflightCallCount() >= this.maxActiveCalls) {
+      this.sendError(id, RpcServerError.TooManyActiveCalls);
       return;
     }
     const streamCall = new StreamCall<T>();
