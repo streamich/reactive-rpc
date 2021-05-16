@@ -1,5 +1,5 @@
 import {Observable} from "rxjs";
-import {NotificationMessage, ReactiveRpcMessage, ReactiveRpcRequestMessage, RequestCompleteMessage, RequestDataMessage, RequestErrorMessage, RequestUnsubscribeMessage, ResponseCompleteMessage, ResponseDataMessage, ResponseErrorMessage, ResponseUnsubscribeMessage} from "../messages/nominal";
+import {NotificationMessage, ReactiveRpcMessage, RequestCompleteMessage, RequestDataMessage, RequestErrorMessage, RequestUnsubscribeMessage, ResponseCompleteMessage, ResponseDataMessage, ResponseErrorMessage, ResponseUnsubscribeMessage} from "../messages/nominal";
 import {RpcClient} from "./RpcClient";
 import {RpcServer} from "./RpcServer";
 
@@ -17,7 +17,7 @@ export class RpcDuplex<Ctx = unknown, T = unknown> {
     this.server = params.server;
   }
 
-  public onMessages(messages: ReactiveRpcRequestMessage<T>[], ctx: Ctx): void {
+  public onMessages(messages: ReactiveRpcMessage<T>[], ctx: Ctx): void {
     const length = messages.length;
     for (let i = 0; i < length; i++) this.onMessage(messages[i], ctx);
   }
