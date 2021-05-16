@@ -21,7 +21,12 @@ const setup = (params: {server?: Partial<RpcServerFromApiParams>, client?: Parti
       if (error instanceof Error) return {message: error.message};
       return error;
     },
-    formatErrorCode: (code: RpcServerError) => JSON.stringify({code}),
+    formatErrorCode: (code: RpcServerError) => {
+      return {
+        message: 'PROTOCOL',
+        code,
+      };
+    },
     ...params.server,
   });
   const client = new RpcClient({
@@ -77,4 +82,20 @@ test('can execute two request in parallel', async () => {
   const [res1, res2] = await Promise.all([promise1, promise2]);
   expect(res1[0]).toEqual({num: 2});
   expect(res2[0]).toEqual({num: 4});
+});
+
+test('enforces max in-flight calls', async () => {
+  const {client} = setup();
+  const promise1 = of(firstValueFrom(client.call('delay', {})));
+  const promise2 = of(firstValueFrom(client.call('delay', {})));
+  const promise3 = of(firstValueFrom(client.call('delay', {})));
+  const promise4 = of(firstValueFrom(client.call('delay', {})));
+  const [res1, res2, res3, res4] = await Promise.all([promise1, promise2, promise3, promise4]);
+  expect(res1[0]).toBe('done');
+  expect(res2[0]).toBe('done');
+  expect(res3[0]).toBe('done');
+  expect(res4[1]).toEqual({
+    message: 'PROTOCOL',
+    code: RpcServerError.TooManyActiveCalls,
+  });
 });

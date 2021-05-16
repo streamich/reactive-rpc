@@ -6,6 +6,14 @@ const ping: RpcMethodStatic<object, void, 'pong'> = {
   call: async () => 'pong',
 };
 
+const delay: RpcMethodStatic<object, void, 'done'> = {
+  isStreaming: false,
+  call: async () => {
+    await new Promise(r => setTimeout(r, 10));
+    return 'done';
+  },
+};
+
 const double: RpcMethodStatic<object, {num: number}, {num: number}> = {
   isStreaming: false,
   call: async (ctx, {num}) => ({num: num * 2}),
@@ -51,6 +59,7 @@ const buildinfo: RpcMethodStreaming<object, void, {commit: string, sha1: string}
 
 export const sampleApi = {
   ping,
+  delay,
   double,
   error,
   streamError,
