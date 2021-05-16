@@ -1,8 +1,7 @@
 import {sampleApi} from './sample-api';
-import {RpcServer, RpcServerParams, RpcServerError, RpcServerFromApiParams} from '../RpcServer';
-import {of, from, Subject, Observable, Subscriber} from 'rxjs';
-import {ReactiveRpcRequestMessage, ReactiveRpcResponseMessage, NotificationMessage, RequestCompleteMessage, RequestDataMessage, RequestErrorMessage, RequestUnsubscribeMessage, ResponseCompleteMessage, ResponseDataMessage, ResponseErrorMessage, ResponseUnsubscribeMessage} from '../../messages/nominal';
-import {share, switchMap, take, tap} from 'rxjs/operators';
+import {RpcServer, RpcServerError, RpcServerFromApiParams} from '../RpcServer';
+import {Subject} from 'rxjs';
+import {RequestCompleteMessage, ResponseCompleteMessage} from '../../messages/nominal';
 
 const setup = (params: Partial<RpcServerFromApiParams> = {}) => {
   const send = jest.fn();

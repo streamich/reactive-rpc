@@ -192,10 +192,10 @@ export class RpcServer<Ctx = unknown, T = unknown> {
       else streamCall.reqFinalized = true;
     };
     streamCall.req$.subscribe({error: onReqFinalize, complete: onReqFinalize});
-    const response$ = rpcMethodStreaming.call(ctx, request$);
-    response$.subscribe(streamCall.res$);
     subscribeCompleteObserver<T>(streamCall.res$, {
-      next: (value: T) => this.send(new ResponseDataMessage<T>(id, value)),
+      next: (value: T) => {
+        this.send(new ResponseDataMessage<T>(id, value));
+      },
       error: (error: unknown) => {
         if (streamCall.reqFinalized) this.activeStreamCalls.delete(id);
         else streamCall.resFinalized = true;
@@ -207,6 +207,7 @@ export class RpcServer<Ctx = unknown, T = unknown> {
         this.send(new ResponseCompleteMessage<T>(id, value));
       },
     });
+    rpcMethodStreaming.call(ctx, request$).subscribe(streamCall.res$);
     return streamCall;
   }
 
