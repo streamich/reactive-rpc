@@ -17,9 +17,9 @@ const getUser: RpcMethodStatic<object, {id: string}, {id: string, name: string, 
   },
 };
 
-const timer: RpcMethodStreaming<object, void, number> = {
+const utilTimer: RpcMethodStreaming<object, void, number> = {
   isStreaming: true,
-  call: (ctx, request$) => timer(3000),
+  call: (ctx, request$) => timer(1e3, 1e3),
 };
 
 const buildinfo: RpcMethodStreaming<object, void, {commit: string, sha1: string}> = {
@@ -30,9 +30,9 @@ const buildinfo: RpcMethodStreaming<object, void, {commit: string, sha1: string}
   }),
 };
 
-export const api = {
+export const sampleApi = {
   ping,
   'auth.users.get': getUser,
-  timer,
   'util.info': buildinfo,
+  'util.timer': utilTimer,
 };
