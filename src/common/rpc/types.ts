@@ -13,3 +13,5 @@ export interface RpcMethodStreaming<Context = unknown, Request = unknown, Respon
   isStreaming: true;
   call: (ctx: Context, request$: Observable<Request>) => Observable<Response>;
 }
+
+export type RpcApi<Context = unknown, T = unknown> = Record<string, RpcMethod<Context, T, T>>;

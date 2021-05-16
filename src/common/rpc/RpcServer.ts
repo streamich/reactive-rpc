@@ -2,7 +2,7 @@ import {Observable, Subject} from 'rxjs';
 import {ReactiveRpcRequestMessage, ReactiveRpcResponseMessage, NotificationMessage, RequestCompleteMessage, RequestDataMessage, RequestErrorMessage, RequestUnsubscribeMessage, ResponseCompleteMessage, ResponseDataMessage, ResponseErrorMessage, ResponseUnsubscribeMessage} from '../messages/nominal';
 import {subscribeCompleteObserver} from '../util/subscribeCompleteObserver';
 import {TimedQueue} from '../util/TimedQueue';
-import {RpcMethod, RpcMethodStatic, RpcMethodStreaming} from './types';
+import {RpcApi, RpcMethod, RpcMethodStatic, RpcMethodStreaming} from './types';
 
 export const enum RpcServerError {
   Unknown = 0,
@@ -63,6 +63,10 @@ export interface RpcServerParams<Ctx = unknown, T = unknown> {
   bufferTime?: number;
 }
 
+export interface RpcServerFromApiParams<Ctx = unknown, T = unknown> extends Omit<RpcServerParams<Ctx, T>, 'getRpcMethod'> {
+  api: RpcApi<Ctx, T>;
+}
+
 class StreamCall<T = unknown> {
   public reqFinalized: boolean = false;
   public resFinalized: boolean = false;
@@ -71,6 +75,18 @@ class StreamCall<T = unknown> {
 }
 
 export class RpcServer<Ctx = unknown, T = unknown> {
+  public static fromApi<Ctx = unknown, T = unknown>(params: RpcServerFromApiParams<Ctx, T>): RpcServer<Ctx, T> {
+    const {api, ...rest} = params;
+    const server = new RpcServer({
+      ...rest,
+      getRpcMethod: (method: string) => {
+        if (!api.hasOwnProperty(method)) return undefined;
+        return api[method];
+      },
+    });
+    return server;
+  }
+
   private send: (message: ReactiveRpcResponseMessage<T>) => void;
   private getRpcMethod: RpcServerParams<Ctx, T>['getRpcMethod'];
   private notify: RpcServerParams<Ctx, T>['notify'];
